@@ -458,7 +458,7 @@ body::after{
 // ═══════════════════════════════════════════════════════
 // SUPABASE
 const SB_URL='https://kqivprvlwusihekxdisb.supabase.co';
-const SB_KEY= + SB_KEY + ;
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtxaXZwcnZsd3VzaWhla3hkaXNiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NjU0MjEsImV4cCI6MjA4NzQ0MTQyMX0.Zu4ts4lFIja1sGMwxMyWfbDRryhZ58RnsYonyTJ6i-g';
 async function sbFetch(path,opts){
   opts=opts||{};
   const headers={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};
