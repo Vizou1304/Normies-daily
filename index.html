@@ -456,6 +456,19 @@ body::after{
 
 <script>
 // ═══════════════════════════════════════════════════════
+// SUPABASE
+const SB_URL='https://kqivprvlwusihekxdisb.supabase.co';
+const SB_KEY= + SB_KEY + ;
+async function sbFetch(path,opts){
+  opts=opts||{};
+  const headers={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};
+  if(opts.headers) Object.assign(headers,opts.headers);
+  const r=await fetch(SB_URL+path,Object.assign({},opts,{headers}));
+  if(!r.ok){const t=await r.text();console.error('SB',r.status,t);return null;}
+  const txt=await r.text();return txt?JSON.parse(txt):null;
+}
+
+// ═══════════════════════════════════════════════════════
 // CONSTANTS & CONFIG
 // ═══════════════════════════════════════════════════════
 const TOTAL_PX   = 1600;
@@ -578,8 +591,8 @@ async function init(){
 
   // Check saved identity
   try{
-    const s=await window.storage.get(ID_KEY);
-    if(s) myId=parseInt(s.value);
+    const s=localStorage.getItem(ID_KEY);
+    if(s) myId=parseInt(s);
   }catch(e){}
 
   setL('FETCHING TARGET...',20);
@@ -625,7 +638,7 @@ async function init(){
 
   // Check if already played
   let played=null;
-  try{const p=await window.storage.get(PLAYED_KEY);if(p)played=JSON.parse(p.value);}catch(e){}
+  try{const p=localStorage.getItem(PLAYED_KEY);if(p)played=JSON.parse(p);}catch(e){}
 
   // ── BEFORE 18H : block everything, show countdown ──
   if(!gameIsLive()){
@@ -687,9 +700,22 @@ async function loadGateNormie(){
 
 async function enterGame(){
   if(!myId)return;
-  // Save identity
-  try{await window.storage.set(ID_KEY,String(myId));}catch(e){}
+  try{localStorage.setItem(ID_KEY,String(myId));}catch(e){}
   setPlayerCard(myId,myPixels);
+  // Block replay
+  let played=null;
+  try{const p=localStorage.getItem(PLAYED_KEY);if(p)played=JSON.parse(p);}catch(e){}
+  if(played){
+    document.getElementById('gate').style.display='none';
+    document.getElementById('already-played').classList.add('show');
+    document.getElementById('ap-score').textContent=String(played.score).padStart(5,'0');
+    document.getElementById('ap-detail').textContent=
+      (played.correct?'✓ CORRECT ANSWER':'✗ WRONG — TARGET WAS NORMIE #'+String(targetId).padStart(4,'0'))+
+      '
+BUZZED AT '+Math.round(played.buzzPx/TOTAL_PX*100)+'% REVEALED';
+    drawCanvas(currentRevealCount, true);
+    return;
+  }
   showGame();
 }
 
@@ -862,24 +888,25 @@ async function scoreAndShow(guessId,correct){
 async function saveScore(guessId,score,buzzPx,correct){
   if(!myId)return;
   try{
-    let lb=[];
-    try{const r=await window.storage.get(LB_KEY,true);if(r)lb=JSON.parse(r.value);}catch(e){}
-    lb=lb.filter(e=>e.id!==myId);
-    lb.push({id:myId,guessId,score,buzzPx,correct,ts:Date.now()});
-    lb.sort((a,b)=>b.score-a.score);
-    await window.storage.set(LB_KEY,JSON.stringify(lb),true);
-    await window.storage.set(PLAYED_KEY,JSON.stringify({score,guessId,buzzPx,correct}));
+    await sbFetch('/rest/v1/scores',{
+      method:'POST',
+      headers:{'Prefer':'resolution=merge-duplicates'},
+      body:JSON.stringify({id:myId,guess_id:guessId,score:score,buzz_px:buzzPx,correct:correct,day:DAY,ts:Date.now()})
+    });
+    localStorage.setItem(PLAYED_KEY,JSON.stringify({score:score,guessId:guessId,buzzPx:buzzPx,correct:correct}));
   }catch(e){console.error(e);}
 }
 
 async function refreshLeaderboard(){
   let lb=[];
-  try{const r=await window.storage.get(LB_KEY,true);if(r)lb=JSON.parse(r.value);}catch(e){}
-  lb.sort((a,b)=>b.score-a.score);
+  try{
+    const data=await sbFetch('/rest/v1/scores?day=eq.'+DAY+'&order=score.desc&limit=20');
+    if(data) lb=data.map(function(e){return {id:e.id,guessId:e.guess_id,score:e.score,buzzPx:e.buzz_px,correct:e.correct,ts:e.ts};});
+  }catch(e){console.error(e);}
   renderLeaderboard(lb);
   document.getElementById('stat-players').textContent=lb.length||'—';
   if(myId!=null){
-    const rank=lb.findIndex(e=>e.id===myId);
+    const rank=lb.findIndex(function(e){return e.id===myId;});
     document.getElementById('stat-rank').textContent=rank>=0?'#'+(rank+1):'—';
   }
   document.getElementById('lb-updated').textContent=
