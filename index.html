@@ -711,8 +711,7 @@ async function enterGame(){
     document.getElementById('ap-score').textContent=String(played.score).padStart(5,'0');
     document.getElementById('ap-detail').textContent=
       (played.correct?'✓ CORRECT ANSWER':'✗ WRONG — TARGET WAS NORMIE #'+String(targetId).padStart(4,'0'))+
-      '
-BUZZED AT '+Math.round(played.buzzPx/TOTAL_PX*100)+'% REVEALED';
+      '\nBUZZED AT '+Math.round(played.buzzPx/TOTAL_PX*100)+'% REVEALED';
     drawCanvas(currentRevealCount, true);
     return;
   }
