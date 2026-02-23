@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NORMIES // DAILY ROULETTE</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --off:#e3e5e4;   /* normie bg — exact on-chain color */
+  --on:#48494b;    /* normie pixel — exact on-chain color */
+  --bg:#e3e5e4;
+  --surface:#d8dada;
+  --surface2:#cfd0d0;
+  --border:#b8baba;
+  --border2:#a8aaaa;
+  --text:#1a1c1c;
+  --dim:#8a8c8c;
+  --mid:#5a5c5c;
+  --gold:#7a5a18;
+  --gold-bg:rgba(122,90,24,.07);
+  --gold-border:rgba(122,90,24,.2);
+  --green:#2a5a2a;
+  --green-bg:rgba(42,90,42,.07);
+  --red:#7a2a1a;
+  --red-bg:rgba(122,42,26,.07);
+  --silver:#3a5a5a;
+  --bronze:#6a4a1a;
+}
+
+body{
+  background:var(--bg);
+  font-family:'Share Tech Mono',monospace;
+  color:var(--text);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+/* grid — same as Normie pixel grid feel */
+body::after{
+  content:'';position:fixed;inset:0;
+  background-image:
+    linear-gradient(rgba(72,73,75,.05) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(72,73,75,.05) 1px,transparent 1px);
+  background-size:32px 32px;
+  pointer-events:none;z-index:0;
+}
+
+.page{position:relative;z-index:1;max-width:1040px;margin:0 auto;padding:0 20px 80px;}
+
+/* ── HEADER ── */
+#topbar{
+  height:50px;display:flex;align-items:center;gap:14px;
+  border-bottom:1px solid var(--border);margin-bottom:28px;
+}
+.logo{font-size:10px;letter-spacing:.34em;color:var(--on);}
+.tsep{width:1px;height:14px;background:var(--border);}
+.tagline{font-size:8px;letter-spacing:.18em;color:var(--dim);}
+.tright{margin-left:auto;display:flex;align-items:center;gap:10px;}
+#day-badge{font-size:8px;letter-spacing:.16em;padding:3px 10px;border:1px solid var(--border);color:var(--dim);}
+#date-str{font-size:9px;letter-spacing:.12em;color:var(--mid);}
+
+/* ── MAIN GRID ── */
+.layout{display:grid;grid-template-columns:1fr 290px;gap:16px;align-items:start;}
+
+/* ── PANELS ── */
+.panel{background:var(--surface);border:1px solid var(--border);}
+.ph{padding:10px 15px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:7px;background:rgba(72,73,75,.04);}
+.ph-dot{width:4px;height:4px;background:var(--dim);}
+.ph-t{font-size:8px;letter-spacing:.22em;color:var(--mid);}
+.ph-r{margin-left:auto;font-size:8px;letter-spacing:.1em;color:var(--dim);}
+
+/* ── IDENTITY GATE ── */
+#gate{padding:36px 24px;display:flex;flex-direction:column;align-items:center;gap:22px;text-align:center;}
+.gate-title{font-size:22px;letter-spacing:.18em;color:var(--on);}
+.gate-desc{font-size:9px;letter-spacing:.16em;color:var(--mid);line-height:2.2;max-width:380px;}
+
+/* NFT preview in gate */
+.gate-nft-wrap{
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+}
+#gate-img{
+  width:120px;height:120px;
+  image-rendering:pixelated;
+  border:1px solid var(--border);
+  background:var(--off);
+  display:block;
+  object-fit:cover;
+}
+#gate-nft-label{font-size:9px;letter-spacing:.12em;color:var(--dim);}
+
+.gate-row{display:flex;width:260px;}
+#gate-in{
+  flex:1;background:var(--surface2);border:1px solid var(--border);border-right:none;
+  color:var(--text);font-family:'Share Tech Mono',monospace;font-size:18px;
+  padding:9px 12px;outline:none;text-align:center;letter-spacing:.08em;
+}
+#gate-in:focus{border-color:var(--border2);}
+#gate-load{
+  background:var(--surface2);border:1px solid var(--border);
+  color:var(--mid);font-family:'Share Tech Mono',monospace;font-size:9px;
+  padding:9px 14px;cursor:pointer;letter-spacing:.12em;transition:all .15s;
+}
+#gate-load:hover{background:var(--surface);color:var(--text);}
+#gate-status{font-size:8px;letter-spacing:.12em;color:var(--dim);min-height:14px;}
+
+#gate-play{
+  background:var(--gold-bg);border:1px solid var(--gold-border);
+  color:var(--gold);font-family:'Share Tech Mono',monospace;font-size:10px;
+  padding:12px 36px;cursor:pointer;letter-spacing:.22em;transition:all .2s;
+  display:none;
+}
+#gate-play.show{display:block;}
+#gate-play:hover{background:rgba(122,90,24,.14);}
+
+/* ── GAME ── */
+#game{display:none;flex-direction:column;}
+#game.show{display:flex;}
+
+/* Time context bar */
+#time-bar{
+  padding:12px 16px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:14px;
+  background:rgba(72,73,75,.03);
+}
+.tb-item{display:flex;flex-direction:column;gap:3px;}
+.tb-l{font-size:7px;letter-spacing:.2em;color:var(--dim);}
+.tb-v{font-size:13px;letter-spacing:.05em;color:var(--on);}
+.tb-sep{width:1px;height:30px;background:var(--border);}
+.tb-bar-wrap{flex:1;}
+.tb-bar-label{font-size:7px;letter-spacing:.16em;color:var(--dim);margin-bottom:4px;display:flex;justify-content:space-between;}
+.tb-bar-bg{height:3px;background:var(--border);}
+#tb-bar-fill{height:100%;background:var(--on);transition:width 1s;}
+
+/* Reveal area */
+#reveal-section{padding:28px;display:flex;flex-direction:column;align-items:center;gap:20px;}
+
+#normie-wrap{
+  position:relative;width:280px;height:280px;
+}
+#normie-canvas{
+  width:280px;height:280px;
+  image-rendering:pixelated;display:block;
+  border:1px solid var(--border);
+  background:var(--off);
+}
+#px-info{
+  position:absolute;bottom:-18px;left:0;right:0;
+  text-align:center;font-size:8px;letter-spacing:.14em;color:var(--dim);
+}
+
+/* Reveal bar */
+#rev-bar-wrap{width:100%;max-width:480px;}
+.rev-bar-labels{display:flex;justify-content:space-between;font-size:8px;letter-spacing:.12em;color:var(--dim);margin-bottom:5px;}
+#rev-bar-bg{height:3px;background:var(--border);}
+#rev-bar-fill{height:100%;background:var(--on);transition:width .3s;}
+
+/* Buzz */
+#buzz-btn{
+  width:100%;max-width:480px;
+  background:var(--gold-bg);border:1px solid var(--gold-border);
+  color:var(--gold);font-family:'Share Tech Mono',monospace;
+  font-size:11px;padding:13px;cursor:pointer;letter-spacing:.22em;transition:all .2s;
+}
+#buzz-btn:hover:not(:disabled){background:rgba(122,90,24,.14);}
+#buzz-btn:disabled{opacity:.3;cursor:not-allowed;}
+.buzz-sub{font-size:8px;letter-spacing:.14em;color:var(--dim);}
+
+/* Choices */
+#choices-section{width:100%;max-width:480px;display:none;}
+#choices-section.show{display:block;}
+.cs-label{font-size:8px;letter-spacing:.2em;color:var(--mid);margin-bottom:10px;}
+#choices-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+
+.choice-btn{
+  background:var(--surface2);border:1px solid var(--border);
+  cursor:pointer;padding:0;
+  display:flex;flex-direction:column;align-items:center;
+  transition:all .15s;overflow:hidden;position:relative;
+}
+.choice-btn:hover:not([disabled]):not(.locked){
+  border-color:var(--border2);background:var(--surface);
+  transform:translateY(-1px);box-shadow:0 2px 8px rgba(72,73,75,.1);
+}
+.choice-btn.correct{border-color:var(--green);background:var(--green-bg);}
+.choice-btn.wrong  {border-color:var(--red);  background:var(--red-bg);}
+.choice-img{
+  width:100%;aspect-ratio:1;
+  object-fit:cover;display:block;
+  image-rendering:pixelated;
+  border-bottom:1px solid var(--border);
+  background:var(--off);
+}
+.choice-label{
+  font-size:8px;letter-spacing:.12em;color:var(--mid);
+  padding:8px;width:100%;text-align:center;
+}
+.choice-btn.correct .choice-label{color:var(--green);}
+.choice-btn.wrong   .choice-label{color:var(--red);}
+.choice-mark{position:absolute;top:5px;right:6px;font-size:11px;opacity:0;transition:opacity .2s;}
+.choice-btn.correct .choice-mark{opacity:1;color:var(--green);}
+.choice-btn.wrong   .choice-mark{opacity:1;color:var(--red);}
+
+/* Result */
+#result-box{
+  width:100%;max-width:480px;display:none;flex-direction:column;align-items:center;gap:14px;
+  padding:22px;border:1px solid var(--border);background:rgba(72,73,75,.04);
+}
+#result-box.show{display:flex;}
+.rb-head{font-size:13px;letter-spacing:.26em;}
+.rb-head.ok{color:var(--green);}
+.rb-head.ko{color:var(--red);}
+.rb-score{font-size:44px;letter-spacing:.04em;color:var(--gold);}
+.rb-detail{font-size:8px;letter-spacing:.1em;color:var(--dim);text-align:center;line-height:2.4;white-space:pre-line;}
+
+/* Countdown screen */
+#countdown-screen{display:none;flex-direction:column;align-items:center;gap:16px;padding:52px 24px;text-align:center;}
+#countdown-screen.show{display:flex;}
+.cd-title{font-size:9px;letter-spacing:.22em;color:var(--mid);}
+.cd-time{font-size:36px;letter-spacing:.12em;color:var(--gold);}
+.cd-label{font-size:8px;letter-spacing:.2em;color:var(--dim);margin-top:8px;}
+.cd-timer{font-size:48px;letter-spacing:.06em;color:var(--on);}
+.cd-sub{font-size:8px;letter-spacing:.16em;color:var(--dim);margin-top:8px;}
+
+/* Already played */
+#already-played{display:none;flex-direction:column;align-items:center;gap:16px;padding:40px 24px;text-align:center;}
+#already-played.show{display:flex;}
+.ap-head{font-size:12px;letter-spacing:.28em;color:var(--gold);}
+.ap-score{font-size:40px;color:var(--gold);}
+.ap-sub{font-size:8px;letter-spacing:.12em;color:var(--dim);line-height:2;}
+
+/* ── SIDE ── */
+.side-stack{display:flex;flex-direction:column;gap:14px;}
+
+/* Player card */
+#player-section{padding:14px 15px;display:flex;gap:12px;align-items:center;border-bottom:1px solid var(--border);}
+#my-nft-img{
+  width:52px;height:52px;image-rendering:pixelated;
+  border:1px solid var(--border);background:var(--off);flex-shrink:0;
+  object-fit:cover;display:block;
+}
+.pc-info{flex:1;display:flex;flex-direction:column;gap:4px;min-width:0;}
+.pc-name{font-size:13px;letter-spacing:.07em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pc-sub{font-size:8px;letter-spacing:.1em;color:var(--mid);}
+.pc-change{font-size:7px;letter-spacing:.1em;color:var(--dim);cursor:pointer;text-decoration:underline;margin-top:1px;}
+.pc-change:hover{color:var(--mid);}
+
+/* Stats */
+.stats-row{display:grid;grid-template-columns:1fr 1fr;}
+.sc{padding:10px 14px;border-right:1px solid var(--border);}
+.sc:last-child{border-right:none;}
+.sc-l{font-size:7px;letter-spacing:.16em;color:var(--dim);margin-bottom:3px;}
+.sc-v{font-size:18px;color:var(--on);}
+
+/* Leaderboard */
+.lb-list{max-height:420px;overflow-y:auto;}
+.lb-row{
+  display:grid;grid-template-columns:22px 40px 1fr auto;
+  align-items:center;gap:8px;
+  padding:9px 12px;border-bottom:1px solid var(--border);
+}
+.lb-row:last-child{border-bottom:none;}
+.lb-row.me{background:rgba(122,90,24,.04);}
+.lb-rank{font-size:9px;color:var(--dim);text-align:center;}
+.lb-rank.r1{color:var(--gold);}
+.lb-rank.r2{color:var(--silver);}
+.lb-rank.r3{color:var(--bronze);}
+.lb-av{
+  width:36px;height:36px;
+  image-rendering:pixelated;border:1px solid var(--border);
+  background:var(--off);object-fit:cover;display:block;
+}
+.lb-info{display:flex;flex-direction:column;gap:2px;min-width:0;}
+.lb-name{font-size:9px;letter-spacing:.06em;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.lb-detail{font-size:7px;letter-spacing:.08em;color:var(--dim);}
+.lb-score{font-size:11px;letter-spacing:.04em;color:var(--mid);}
+.lb-score.top{color:var(--gold);}
+.lb-empty{padding:20px;text-align:center;font-size:8px;color:var(--dim);letter-spacing:.14em;line-height:2;}
+
+/* Loading screen */
+#loader{
+  position:fixed;inset:0;z-index:200;background:var(--bg);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
+  transition:opacity .4s;
+}
+.l-title{font-size:11px;letter-spacing:.3em;color:var(--on);}
+.l-msg{font-size:9px;letter-spacing:.14em;color:var(--dim);}
+.l-bar-bg{width:180px;height:2px;background:var(--border);}
+.l-bar{height:100%;background:var(--on);transition:width .3s;width:0%;}
+</style>
+</head>
+<body>
+
+<!-- LOADER -->
+<div id="loader">
+  <div class="l-title">NORMIES // DAILY ROULETTE</div>
+  <div class="l-msg" id="l-msg">INITIALIZING...</div>
+  <div class="l-bar-bg"><div class="l-bar" id="l-bar"></div></div>
+</div>
+
+<div class="page">
+
+  <div id="topbar">
+    <div class="logo">■ NORMIES // DAILY ROULETTE</div>
+    <div class="tsep"></div>
+    <div class="tagline">GUESS THE DAILY NORMIE</div>
+    <div class="tright">
+      <div id="date-str"></div>
+      <div id="day-badge"></div>
+    </div>
+  </div>
+
+  <div class="layout">
+
+    <!-- MAIN GAME PANEL -->
+    <div class="panel">
+      <div class="ph">
+        <div class="ph-dot"></div>
+        <div class="ph-t">TODAY'S TARGET</div>
+        <div class="ph-r" id="px-label-header">— / 1600 PIXELS</div>
+      </div>
+
+      <!-- IDENTITY GATE -->
+      <div id="gate">
+        <div class="gate-title">IDENTIFY YOURSELF</div>
+        <div class="gate-desc">
+          ENTER YOUR NORMIE ID TO JOIN THE LEADERBOARD<br>
+          YOUR NFT IS YOUR IDENTITY
+        </div>
+        <div class="gate-nft-wrap">
+          <img id="gate-img" src="" alt="" style="display:none;">
+          <div id="gate-nft-label">—</div>
+        </div>
+        <div class="gate-row">
+          <input type="number" id="gate-in" min="0" max="9999" placeholder="0000">
+          <button id="gate-load" onclick="loadGateNormie()">LOAD</button>
+        </div>
+        <div id="gate-status"></div>
+        <button id="gate-play" onclick="enterGame()">■ ENTER THE GAME</button>
+      </div>
+
+      <!-- COUNTDOWN (before 18h) -->
+      <div id="countdown-screen">
+        <div class="cd-title">TODAY'S NORMIE DROPS AT</div>
+        <div class="cd-time">18:00</div>
+        <div class="cd-label">TIME REMAINING</div>
+        <div class="cd-timer" id="cd-timer">--:--:--</div>
+        <div class="cd-sub">COME BACK AT 18H00 TO PLAY</div>
+      </div>
+
+      <!-- ALREADY PLAYED -->
+      <div id="already-played">
+        <div class="ap-head">ALREADY SUBMITTED TODAY</div>
+        <div class="ap-sub">COME BACK TOMORROW FOR A NEW TARGET<br>THE NORMIE IS STILL REVEALING UNTIL MIDNIGHT</div>
+        <div style="font-size:8px;letter-spacing:.14em;color:var(--dim);">YOUR SCORE</div>
+        <div class="ap-score" id="ap-score">—</div>
+        <div class="ap-sub" id="ap-detail"></div>
+      </div>
+
+      <!-- GAME -->
+      <div id="game">
+
+        <!-- Time context -->
+        <div id="time-bar">
+          <div class="tb-item">
+            <div class="tb-l">REVEALED</div>
+            <div class="tb-v" id="tb-pct">0%</div>
+          </div>
+          <div class="tb-sep"></div>
+          <div class="tb-item">
+            <div class="tb-l">PIXELS SHOWN</div>
+            <div class="tb-v" id="tb-px">0</div>
+          </div>
+          <div class="tb-sep"></div>
+          <div class="tb-wrap" style="flex:1;">
+            <div class="tb-bar-label">
+              <span class="tb-l">DAY PROGRESS</span>
+              <span class="tb-l" id="tb-time-remaining"></span>
+            </div>
+            <div class="tb-bar-bg"><div id="tb-bar-fill" style="width:0%"></div></div>
+          </div>
+        </div>
+
+        <!-- Reveal -->
+        <div id="reveal-section">
+
+          <div id="normie-wrap">
+            <canvas id="normie-canvas" width="40" height="40"></canvas>
+            <div id="px-info">—</div>
+          </div>
+
+          <div id="rev-bar-wrap">
+            <div class="rev-bar-labels">
+              <span>REVEAL PROGRESS</span>
+              <span id="rev-pct">0%</span>
+            </div>
+            <div id="rev-bar-bg"><div id="rev-bar-fill" style="width:0%"></div></div>
+          </div>
+
+          <button id="buzz-btn" onclick="buzz()" disabled>■ I KNOW THIS NORMIE — BUZZ IN</button>
+          <div class="buzz-sub" id="buzz-sub">WAIT FOR MORE PIXELS OR BUZZ NOW FOR MAX SCORE</div>
+
+          <!-- 4 choices -->
+          <div id="choices-section">
+            <div class="cs-label">■ IDENTIFY THIS NORMIE</div>
+            <div id="choices-grid"></div>
+          </div>
+
+          <!-- Result -->
+          <div id="result-box">
+            <div class="rb-head" id="rb-head">—</div>
+            <div class="rb-score" id="rb-score">0</div>
+            <div class="rb-detail" id="rb-detail">—</div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- SIDE -->
+    <div class="side-stack">
+
+      <!-- Player identity -->
+      <div class="panel">
+        <div class="ph"><div class="ph-dot"></div><div class="ph-t">PLAYING AS</div></div>
+        <div id="player-section">
+          <img id="my-nft-img" src="" alt="">
+          <div class="pc-info">
+            <div class="pc-name" id="pc-name">—</div>
+            <div class="pc-sub" id="pc-sub">—</div>
+            <div class="pc-change" onclick="resetIdentity()">CHANGE NORMIE ↩</div>
+          </div>
+        </div>
+        <div class="stats-row">
+          <div class="sc"><div class="sc-l">PLAYERS TODAY</div><div class="sc-v" id="stat-players">—</div></div>
+          <div class="sc"><div class="sc-l">YOUR RANK</div><div class="sc-v" id="stat-rank">—</div></div>
+        </div>
+      </div>
+
+      <!-- Leaderboard -->
+      <div class="panel">
+        <div class="ph">
+          <div class="ph-dot"></div>
+          <div class="ph-t">LEADERBOARD</div>
+          <div class="ph-r" id="lb-updated">LIVE</div>
+        </div>
+        <div class="lb-list" id="lb-list">
+          <div class="lb-empty">■ NO SCORES YET<br>BE THE FIRST</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// CONSTANTS & CONFIG
+// ═══════════════════════════════════════════════════════
+const TOTAL_PX   = 1600;
+const API        = 'https://api.normies.art/normie';
+const DAY        = todayKey();
+const LB_KEY     = `nr-lb:${DAY}`;
+const ID_KEY     = `nr-my-id`;
+const PLAYED_KEY = `nr-played:${DAY}`;
+
+// ─ Colors matching exact on-chain values ─
+const C_ON  = [0x48,0x49,0x4b]; // #48494b
+const C_OFF = [0xe3,0xe5,0xe4]; // #e3e5e4
+const C_HIDDEN = [0xd0,0xd2,0xd1]; // slightly darker than bg = "not yet revealed"
+
+// ═══════════════════════════════════════════════════════
+// DATE HELPERS
+// ═══════════════════════════════════════════════════════
+function todayKey(){
+  const d=new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function dayNumber(){
+  return Math.floor((new Date()-new Date('2026-02-23'))/(864e5))+1;
+}
+function dailyTargetId(){
+  let h=0; const k=DAY;
+  for(let i=0;i<k.length;i++) h=((h<<5)-h+k.charCodeAt(i))|0;
+  return Math.abs(h)%9999;
+}
+// Fraction of the day elapsed [0..1] — day runs from 18:00 to 17:59 next day
+function gameStart(){
+  const now=new Date();
+  const start=new Date(now);
+  start.setHours(18,0,0,0);
+  // If before 18h today, start was yesterday at 18h
+  if(now<start) start.setDate(start.getDate()-1);
+  return start;
+}
+function gameIsLive(){
+  const now=new Date();
+  const todayAt18=new Date(now);
+  todayAt18.setHours(18,0,0,0);
+  return now>=todayAt18;
+}
+function dayProgress(){
+  const now=new Date();
+  const start=gameStart();
+  return Math.min((now-start)/864e5, 1);
+}
+// How many pixels are revealed at this moment
+function revealedNow(){
+  if(!gameIsLive()) return 0;
+  // Slow start: revealed = total * progress^0.7 (so early = few, late = a lot)
+  return Math.floor(TOTAL_PX * Math.pow(dayProgress(), 0.7));
+}
+function timeRemaining(){
+  const now=new Date();
+  if(!gameIsLive()){
+    // Countdown to 18h today
+    const start=new Date(now); start.setHours(18,0,0,0);
+    const ms=start-now;
+    const h=Math.floor(ms/3600000), m=Math.floor((ms%3600000)/60000);
+    return `STARTS IN ${String(h).padStart(2,'0')}H${String(m).padStart(2,'0')}M`;
+  }
+  // Time until next 18h
+  const next=new Date(gameStart()); next.setDate(next.getDate()+1);
+  const ms=next-now;
+  const h=Math.floor(ms/3600000), m=Math.floor((ms%3600000)/60000);
+  return `${String(h).padStart(2,'0')}H${String(m).padStart(2,'0')}M LEFT`;
+}
+
+// ═══════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════
+const targetId = dailyTargetId();
+let targetPixels = null;
+let choices = [];       // [{id,pixels}] shuffled, one is correct
+let correctIdx = -1;
+let myId = null;
+let myPixels = null;
+let buzzed = false;
+let buzzAtPx = 0;
+let currentRevealCount = 0;
+let revealOrder = [];
+let tickInterval = null;
+
+// Deterministic decoys for today
+function todayDecoys(target){
+  let h=0; const k=DAY+'decoys';
+  for(let i=0;i<k.length;i++) h=((h<<5)-h+k.charCodeAt(i))|0;
+  const ids=[];
+  while(ids.length<3){
+    h=(h*1664525+1013904223)|0;
+    const id=Math.abs(h)%9999;
+    if(id!==target&&!ids.includes(id)) ids.push(id);
+  }
+  return ids;
+}
+
+// Deterministic pixel reveal order (same for everyone today)
+function buildRevealOrder(){
+  const arr=[...Array(TOTAL_PX).keys()];
+  let s=0; const k=DAY;
+  for(let i=0;i<k.length;i++) s=(s*31+k.charCodeAt(i))|0;
+  const rng=()=>{s=(s*1664525+1013904223)|0;return(s>>>0)/4294967295;};
+  for(let i=arr.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}
+  return arr;
+}
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+async function init(){
+  setL('INITIALIZING...',5);
+
+  // Header dates
+  document.getElementById('date-str').textContent=
+    new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  document.getElementById('day-badge').textContent='DAY '+dayNumber();
+
+  // Check saved identity
+  try{
+    const s=await window.storage.get(ID_KEY);
+    if(s) myId=parseInt(s.value);
+  }catch(e){}
+
+  setL('FETCHING TARGET...',20);
+  try{
+    targetPixels=await fetchPixels(targetId);
+  }catch(e){setL('API ERROR: '+e.message,100);return;}
+
+  revealOrder=buildRevealOrder();
+  currentRevealCount=revealedNow();
+
+  setL('FETCHING DECOY NORMIES...',45);
+  const decoyIds=todayDecoys(targetId);
+  const allChoices=[{id:targetId,pixels:targetPixels,correct:true}];
+  for(const did of decoyIds){
+    try{
+      const px=await fetchPixels(did);
+      allChoices.push({id:did,pixels:px,correct:false});
+    }catch(e){
+      allChoices.push({id:did,pixels:null,correct:false});
+    }
+    setL('FETCHING DECOY NORMIES...',45+allChoices.length*8);
+  }
+
+  // Shuffle choices deterministically
+  choices=seededShuffle(allChoices,DAY);
+  correctIdx=choices.findIndex(c=>c.correct);
+
+  setL('LOADING LEADERBOARD...',85);
+  await refreshLeaderboard();
+
+  setL('READY',100);
+  await sleep(300);
+  document.getElementById('loader').style.opacity='0';
+  setTimeout(()=>document.getElementById('loader').style.display='none',400);
+
+  // Show identity gate or skip if saved
+  if(myId!==null){
+    try{
+      myPixels=await fetchPixels(myId);
+      setPlayerCard(myId,myPixels);
+    }catch(e){myId=null;}
+  }
+
+  // Check if already played
+  let played=null;
+  try{const p=await window.storage.get(PLAYED_KEY);if(p)played=JSON.parse(p.value);}catch(e){}
+
+  // ── BEFORE 18H : block everything, show countdown ──
+  if(!gameIsLive()){
+    document.getElementById('gate').style.display='none';
+    document.getElementById('countdown-screen').classList.add('show');
+    startCountdownTick();
+    return;
+  }
+
+  if(played){
+    // Skip gate, show already played + reveal current state
+    document.getElementById('gate').style.display='none';
+    document.getElementById('already-played').classList.add('show');
+    document.getElementById('ap-score').textContent=String(played.score).padStart(5,'0');
+    document.getElementById('ap-detail').textContent=
+      (played.correct?'✓ CORRECT ANSWER':'✗ WRONG — TARGET WAS NORMIE #'+String(targetId).padStart(4,'0'))+
+      '\nBUZZED AT '+Math.round(played.buzzPx/TOTAL_PX*100)+'% REVEALED';
+    drawCanvas(currentRevealCount, true); // show full on already-played
+  }else if(myId!==null){
+    // Have identity, go straight in
+    showGame();
+  }
+  // else: gate is shown by default
+
+  // Tick every minute to update reveal
+  tickInterval=setInterval(tick,60000);
+}
+
+function tick(){
+  currentRevealCount=revealedNow();
+  if(!buzzed) drawCanvas(currentRevealCount);
+  updateTimeUI();
+}
+
+// ═══════════════════════════════════════════════════════
+// GATE
+// ═══════════════════════════════════════════════════════
+async function loadGateNormie(){
+  const raw=document.getElementById('gate-in').value;
+  const id=parseInt(raw);
+  if(isNaN(id)||id<0||id>9999){
+    setGateStatus('INVALID ID — MUST BE 0 TO 9999'); return;
+  }
+  setGateStatus('LOADING NORMIE #'+String(id).padStart(4,'0')+'...');
+  try{
+    const px=await fetchPixels(id);
+    myId=id; myPixels=px;
+    // Show image
+    const img=document.getElementById('gate-img');
+    img.src=`${API}/${id}/image.png`;
+    img.style.display='block';
+    document.getElementById('gate-nft-label').textContent='NORMIE #'+String(id).padStart(4,'0');
+    setGateStatus('■ NORMIE #'+String(id).padStart(4,'0')+' IDENTIFIED');
+    document.getElementById('gate-play').classList.add('show');
+  }catch(e){
+    setGateStatus('ERROR: '+e.message);
+  }
+}
+
+async function enterGame(){
+  if(!myId)return;
+  // Save identity
+  try{await window.storage.set(ID_KEY,String(myId));}catch(e){}
+  setPlayerCard(myId,myPixels);
+  showGame();
+}
+
+function resetIdentity(){
+  myId=null; myPixels=null;
+  document.getElementById('game').classList.remove('show');
+  document.getElementById('already-played').classList.remove('show');
+  document.getElementById('gate').style.display='flex';
+  document.getElementById('gate-play').classList.remove('show');
+  document.getElementById('gate-img').style.display='none';
+  document.getElementById('gate-nft-label').textContent='—';
+  document.getElementById('gate-in').value='';
+  setGateStatus('');
+}
+
+function showGame(){
+  document.getElementById('gate').style.display='none';
+  if(!gameIsLive()){
+    document.getElementById('countdown-screen').classList.add('show');
+    startCountdownTick();
+    return;
+  }
+  document.getElementById('game').classList.add('show');
+  document.getElementById('buzz-btn').disabled=false;
+  buildChoiceGrid();
+  drawCanvas(currentRevealCount);
+  updateTimeUI();
+}
+
+function startCountdownTick(){
+  const el=document.getElementById('cd-timer');
+  function update(){
+    if(gameIsLive()){location.reload();return;}
+    const now=new Date();
+    const start=new Date(now); start.setHours(18,0,0,0);
+    const ms=start-now;
+    const h=Math.floor(ms/3600000), m=Math.floor((ms%3600000)/60000), s=Math.floor((ms%60000)/1000);
+    el.textContent=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  }
+  update();
+  setInterval(update,1000);
+}
+
+// ═══════════════════════════════════════════════════════
+// CANVAS DRAW
+// ═══════════════════════════════════════════════════════
+function drawCanvas(count, forceAll=false){
+  if(!targetPixels)return;
+  const canvas=document.getElementById('normie-canvas');
+  const ctx=canvas.getContext('2d');
+  const img=ctx.createImageData(40,40);
+  const n=forceAll?TOTAL_PX:count;
+
+  // All hidden first
+  for(let i=0;i<TOTAL_PX;i++){
+    img.data[i*4]=C_HIDDEN[0];img.data[i*4+1]=C_HIDDEN[1];img.data[i*4+2]=C_HIDDEN[2];img.data[i*4+3]=255;
+  }
+  // Reveal up to n pixels in today's order
+  for(let k=0;k<n;k++){
+    const i=revealOrder[k];
+    const on=targetPixels[i]==='1';
+    img.data[i*4]=on?C_ON[0]:C_OFF[0];
+    img.data[i*4+1]=on?C_ON[1]:C_OFF[1];
+    img.data[i*4+2]=on?C_ON[2]:C_OFF[2];
+    img.data[i*4+3]=255;
+  }
+  ctx.putImageData(img,0,0);
+
+  // Update labels
+  const pct=Math.round(n/TOTAL_PX*100);
+  document.getElementById('px-info').textContent=n+' / '+TOTAL_PX+' PIXELS REVEALED';
+  document.getElementById('px-label-header').textContent=n+' / '+TOTAL_PX+' PIXELS';
+  document.getElementById('rev-bar-fill').style.width=pct+'%';
+  document.getElementById('rev-pct').textContent=pct+'%';
+  document.getElementById('tb-pct').textContent=pct+'%';
+  document.getElementById('tb-px').textContent=n;
+}
+
+function updateTimeUI(){
+  const prog=dayProgress();
+  document.getElementById('tb-bar-fill').style.width=Math.round(prog*100)+'%';
+  document.getElementById('tb-time-remaining').textContent=timeRemaining();
+}
+
+// ═══════════════════════════════════════════════════════
+// BUZZ & CHOICES
+// ═══════════════════════════════════════════════════════
+function buzz(){
+  if(buzzed)return;
+  buzzed=true;
+  buzzAtPx=currentRevealCount;
+  document.getElementById('buzz-btn').style.display='none';
+  document.getElementById('buzz-sub').textContent='BUZZED AT '+Math.round(buzzAtPx/TOTAL_PX*100)+'% — NOW PICK THE RIGHT NORMIE';
+  document.getElementById('choices-section').classList.add('show');
+}
+
+function buildChoiceGrid(){
+  const grid=document.getElementById('choices-grid');
+  grid.innerHTML='';
+  choices.forEach((c,i)=>{
+    const btn=document.createElement('button');
+    btn.className='choice-btn';
+    btn.id='ch-'+i;
+
+    const img=document.createElement('img');
+    img.className='choice-img';
+    img.src=`${API}/${c.id}/image.png`;
+    img.alt='Normie #'+c.id;
+
+    const lbl=document.createElement('div');
+    lbl.className='choice-label';
+    lbl.textContent='NORMIE #'+String(c.id).padStart(4,'0');
+
+    const mark=document.createElement('div');
+    mark.className='choice-mark';
+    mark.textContent=c.correct?'✓':'✗';
+
+    btn.appendChild(img);btn.appendChild(lbl);btn.appendChild(mark);
+    btn.onclick=()=>selectChoice(i);
+    grid.appendChild(btn);
+  });
+}
+
+function selectChoice(idx){
+  // Lock all
+  for(let i=0;i<4;i++){
+    const btn=document.getElementById('ch-'+i);
+    if(!btn)continue;
+    btn.disabled=true;btn.classList.add('locked');
+    if(i===correctIdx) btn.classList.add('correct');
+    else if(i===idx&&idx!==correctIdx) btn.classList.add('wrong');
+  }
+  // Reveal full normie
+  drawCanvas(TOTAL_PX);
+  const correct=idx===correctIdx;
+  scoreAndShow(choices[idx].id,correct);
+}
+
+// ═══════════════════════════════════════════════════════
+// SCORE
+// ═══════════════════════════════════════════════════════
+async function scoreAndShow(guessId,correct){
+  const revPct=buzzAtPx/TOTAL_PX;
+  // Earlier buzz = higher base (5000 at 0%, ~500 at 100%)
+  const base=Math.round(5000*Math.pow(1-revPct*0.9,1.3));
+  const bonus=correct?3000:0;
+  const total=base+bonus;
+
+  // Result UI
+  const head=document.getElementById('rb-head');
+  head.textContent=correct?'■ CORRECT — WELL PLAYED':'■ WRONG — BETTER LUCK TOMORROW';
+  head.className='rb-head '+(correct?'ok':'ko');
+  document.getElementById('rb-score').textContent=String(total).padStart(5,'0');
+
+  let detail='';
+  detail+=`BASE SCORE    ${String(base).padStart(5,' ')}  (BUZZED AT ${Math.round(revPct*100)}%)\n`;
+  detail+=correct?`CORRECT BONUS +3000\n`:`ANSWER WAS NORMIE #${String(targetId).padStart(4,'0')}\n`;
+  detail+=`TOTAL         ${String(total).padStart(5,' ')} PTS`;
+  document.getElementById('rb-detail').textContent=detail;
+  document.getElementById('result-box').classList.add('show');
+
+  // Save
+  await saveScore(guessId,total,buzzAtPx,correct);
+  await refreshLeaderboard();
+}
+
+// ═══════════════════════════════════════════════════════
+// STORAGE / LEADERBOARD
+// ═══════════════════════════════════════════════════════
+async function saveScore(guessId,score,buzzPx,correct){
+  if(!myId)return;
+  try{
+    let lb=[];
+    try{const r=await window.storage.get(LB_KEY,true);if(r)lb=JSON.parse(r.value);}catch(e){}
+    lb=lb.filter(e=>e.id!==myId);
+    lb.push({id:myId,guessId,score,buzzPx,correct,ts:Date.now()});
+    lb.sort((a,b)=>b.score-a.score);
+    await window.storage.set(LB_KEY,JSON.stringify(lb),true);
+    await window.storage.set(PLAYED_KEY,JSON.stringify({score,guessId,buzzPx,correct}));
+  }catch(e){console.error(e);}
+}
+
+async function refreshLeaderboard(){
+  let lb=[];
+  try{const r=await window.storage.get(LB_KEY,true);if(r)lb=JSON.parse(r.value);}catch(e){}
+  lb.sort((a,b)=>b.score-a.score);
+  renderLeaderboard(lb);
+  document.getElementById('stat-players').textContent=lb.length||'—';
+  if(myId!=null){
+    const rank=lb.findIndex(e=>e.id===myId);
+    document.getElementById('stat-rank').textContent=rank>=0?'#'+(rank+1):'—';
+  }
+  document.getElementById('lb-updated').textContent=
+    new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+}
+
+function renderLeaderboard(lb){
+  const c=document.getElementById('lb-list');
+  if(!lb.length){c.innerHTML='<div class="lb-empty">■ NO SCORES YET<br>BE THE FIRST</div>';return;}
+  c.innerHTML='';
+  lb.slice(0,20).forEach((e,i)=>{
+    const isMe=e.id===myId;
+    const row=document.createElement('div');
+    row.className='lb-row'+(isMe?' me':'');
+
+    const rank=document.createElement('div');
+    rank.className='lb-rank'+(i===0?' r1':i===1?' r2':i===2?' r3':'');
+    rank.textContent=i+1;
+
+    const av=document.createElement('img');
+    av.className='lb-av';
+    av.src=`${API}/${e.id}/image.png`;
+    av.alt='';
+
+    const info=document.createElement('div');
+    info.className='lb-info';
+    const you=isMe?` <span style="color:var(--gold);font-size:7px;">YOU</span>`:'';
+    info.innerHTML=`<div class="lb-name">NORMIE #${String(e.id).padStart(4,'0')}${you}</div>
+      <div class="lb-detail">${e.correct?'✓ CORRECT':'✗ WRONG'} · ${Math.round(e.buzzPx/TOTAL_PX*100)}% REVEALED</div>`;
+
+    const sc=document.createElement('div');
+    sc.className='lb-score'+(i<3?' top':'');
+    sc.textContent=String(e.score).padStart(5,'0');
+
+    row.appendChild(rank);row.appendChild(av);row.appendChild(info);row.appendChild(sc);
+    c.appendChild(row);
+  });
+}
+
+function setPlayerCard(id,pixels){
+  document.getElementById('my-nft-img').src=`${API}/${id}/image.png`;
+  document.getElementById('pc-name').textContent='NORMIE #'+String(id).padStart(4,'0');
+  document.getElementById('pc-sub').textContent='YOUR IDENTITY TODAY';
+}
+
+// ═══════════════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════════════
+async function fetchPixels(id){
+  const r=await fetch(`${API}/${id}/pixels`);
+  if(!r.ok) throw new Error('NORMIE #'+id+' NOT FOUND');
+  return (await r.text()).trim();
+}
+
+function seededShuffle(arr,seed){
+  let s=0;
+  for(let i=0;i<seed.length;i++) s=(s*31+seed.charCodeAt(i))|0;
+  const rng=()=>{s=(s*1664525+1013904223)|0;return(s>>>0)/4294967295;};
+  for(let i=arr.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}
+  return arr;
+}
+
+function setL(msg,pct){document.getElementById('l-msg').textContent=msg;document.getElementById('l-bar').style.width=pct+'%';}
+function setGateStatus(m){document.getElementById('gate-status').textContent=m?'■ '+m:'';}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+// Keyboard
+document.addEventListener('keydown',e=>{
+  if(document.getElementById('gate-in')===document.activeElement){if(e.key==='Enter')loadGateNormie();return;}
+  if(e.key===' '&&!buzzed){e.preventDefault();if(document.getElementById('buzz-btn')&&!document.getElementById('buzz-btn').disabled)buzz();}
+});
+
+init();
+</script>
+</body>
+</html>
