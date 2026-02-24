@@ -214,15 +214,6 @@ body::after{
 .rb-score{font-size:44px;letter-spacing:.04em;color:var(--gold);}
 .rb-detail{font-size:8px;letter-spacing:.1em;color:var(--dim);text-align:center;line-height:2.4;white-space:pre-line;}
 
-/* Countdown screen */
-#countdown-screen{display:none;flex-direction:column;align-items:center;gap:16px;padding:52px 24px;text-align:center;}
-#countdown-screen.show{display:flex;}
-.cd-title{font-size:9px;letter-spacing:.22em;color:var(--mid);}
-.cd-time{font-size:36px;letter-spacing:.12em;color:var(--gold);}
-.cd-label{font-size:8px;letter-spacing:.2em;color:var(--dim);margin-top:8px;}
-.cd-timer{font-size:48px;letter-spacing:.06em;color:var(--on);}
-.cd-sub{font-size:8px;letter-spacing:.16em;color:var(--dim);margin-top:8px;}
-
 /* Already played */
 #already-played{display:none;flex-direction:column;align-items:center;gap:16px;padding:40px 24px;text-align:center;}
 #already-played.show{display:flex;}
@@ -338,15 +329,6 @@ body::after{
         </div>
         <div id="gate-status"></div>
         <button id="gate-play" onclick="enterGame()">■ ENTER THE GAME</button>
-      </div>
-
-      <!-- COUNTDOWN (before 18h) -->
-      <div id="countdown-screen">
-        <div class="cd-title">TODAY'S NORMIE DROPS AT</div>
-        <div class="cd-time">18:00</div>
-        <div class="cd-label">TIME REMAINING</div>
-        <div class="cd-timer" id="cd-timer">--:--:--</div>
-        <div class="cd-sub">COME BACK AT 18H00 TO PLAY</div>
       </div>
 
       <!-- ALREADY PLAYED -->
@@ -508,10 +490,7 @@ function gameStart(){
   return start;
 }
 function gameIsLive(){
-  const now=new Date();
-  const todayAt18=new Date(now);
-  todayAt18.setHours(18,0,0,0);
-  return now>=todayAt18;
+  return true; // always open
 }
 function dayProgress(){
   const now=new Date();
@@ -520,20 +499,10 @@ function dayProgress(){
 }
 // How many pixels are revealed at this moment
 function revealedNow(){
-  if(!gameIsLive()) return 0;
-  // Slow start: revealed = total * progress^0.7 (so early = few, late = a lot)
   return Math.floor(TOTAL_PX * Math.pow(dayProgress(), 0.7));
 }
 function timeRemaining(){
   const now=new Date();
-  if(!gameIsLive()){
-    // Countdown to 18h today
-    const start=new Date(now); start.setHours(18,0,0,0);
-    const ms=start-now;
-    const h=Math.floor(ms/3600000), m=Math.floor((ms%3600000)/60000);
-    return `STARTS IN ${String(h).padStart(2,'0')}H${String(m).padStart(2,'0')}M`;
-  }
-  // Time until next 18h
   const next=new Date(gameStart()); next.setDate(next.getDate()+1);
   const ms=next-now;
   const h=Math.floor(ms/3600000), m=Math.floor((ms%3600000)/60000);
@@ -640,14 +609,6 @@ async function init(){
   let played=null;
   try{const p=localStorage.getItem(PLAYED_KEY);if(p)played=JSON.parse(p);}catch(e){}
 
-  // ── BEFORE 18H : block everything, show countdown ──
-  if(!gameIsLive()){
-    document.getElementById('gate').style.display='none';
-    document.getElementById('countdown-screen').classList.add('show');
-    startCountdownTick();
-    return;
-  }
-
   if(played){
     // Skip gate, show already played + reveal current state
     document.getElementById('gate').style.display='none';
@@ -732,11 +693,6 @@ function resetIdentity(){
 
 function showGame(){
   document.getElementById('gate').style.display='none';
-  if(!gameIsLive()){
-    document.getElementById('countdown-screen').classList.add('show');
-    startCountdownTick();
-    return;
-  }
   document.getElementById('game').classList.add('show');
   document.getElementById('buzz-btn').disabled=false;
   buildChoiceGrid();
@@ -744,19 +700,7 @@ function showGame(){
   updateTimeUI();
 }
 
-function startCountdownTick(){
-  const el=document.getElementById('cd-timer');
-  function update(){
-    if(gameIsLive()){location.reload();return;}
-    const now=new Date();
-    const start=new Date(now); start.setHours(18,0,0,0);
-    const ms=start-now;
-    const h=Math.floor(ms/3600000), m=Math.floor((ms%3600000)/60000), s=Math.floor((ms%60000)/1000);
-    el.textContent=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-  }
-  update();
-  setInterval(update,1000);
-}
+
 
 // ═══════════════════════════════════════════════════════
 // CANVAS DRAW
